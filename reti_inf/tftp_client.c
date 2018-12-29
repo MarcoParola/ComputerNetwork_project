@@ -1,16 +1,15 @@
 #include <stdio.h>
 #include <string.h>  
 #include <stdlib.h>
-#include <errno.h>
+/*#include <errno.h>
 #include <unistd.h>   //close
 #include <arpa/inet.h>    //close
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
-  
+  */
 #define BUFLEN 1024
-#define PORT     8080 
 #define BIN 0
 #define TXT 1
 
@@ -49,25 +48,6 @@ void set_mode(){
 
 
 int main(int argc , char **argv){
-
-    char *hello = "Hellooo from client"; 
-    struct sockaddr_in     servaddr; 
-	int ret, sd, len;
-	//char buf[BUFLEN];
-	struct sockaddr_in sv_addr; // Struttura per il server
-	// Creating socket file descriptor 
-    if ( (sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-        perror("socket creation failed"); 
-        exit(EXIT_FAILURE); 
-    } 
-  
-    memset(&servaddr, 0, sizeof(servaddr)); 
-      
-    // Filling server information 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(PORT); 
-    servaddr.sin_addr.s_addr = INADDR_ANY; 
-
     /*if(argc != 2){
         printf("Argomenti non corretti, riprovare con:\n");
         printf("IP_UDP, PORTA_UDP, IP_SERVER, PORTA_SERVER\n correggi");
@@ -84,7 +64,11 @@ int main(int argc , char **argv){
 		fgets(cmd_string, BUFLEN, stdin);
 
 		// HELP
+		printf("%s, %d\n", cmd_string, strlen(cmd_string));
+	
+
 		if(!strncmp(cmd_string, "!help", 5)){
+				printf("help");
 				help_cmd();	
 		}
 
@@ -96,18 +80,13 @@ int main(int argc , char **argv){
 		// GET
 
 		else if(!strncmp(cmd_string, "!get", 4)){
-			printf("get\n");
-			printf("len: %d string: %s \n", strlen(&cmd_string[5]), &cmd_string[5]);
-			// client invia messaggio
-			sendto(sd, &cmd_string[5], strlen(&cmd_string[5]), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
-			printf("Client: Hello message sent :)\n"); 
+			printf("get");
 		}
 
 
 		// QUIT
 
 		else if(!strncmp(cmd_string, "!quit", 5)){
-    		close(sd); 
 			printf("Terminazione Client\n");
 			return 0;
 		}
