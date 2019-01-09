@@ -16,7 +16,7 @@
 
 // GLOBAL VARIABLES
 char cmd_string[BUFLEN], buffer[BUFLEN];
-int mode = BIN;
+uint16_t mode = BIN;
 
 
 // HELP
@@ -48,6 +48,42 @@ void set_mode(){
 }
 
 
+// GET
+void get_cmd(char * file_name, int* len){
+
+	uint16_t opcode = htons(1), mod = htons(mode);
+	uint8_t endString = 0;
+	int i=0;
+	char * temp = buffer;
+
+	memcpy(buffer, &opcode, 2);
+	*len += 2;
+
+	strcpy(buffer+*len, file_name);
+	*len += strlen(file_name);
+
+	memcpy(buffer + * len, &endString, 1);
+	(*len)++;
+
+	memcpy(buffer + * len, &mod, 2);
+	*len += 2;
+
+	memcpy(buffer + * len, &endString, 1);
+	(*len)++;
+
+	printf("%04x", buffer[0]);
+	printf("%04x", buffer[1]);
+	printf("%s", buffer+2);
+	printf("%04x", buffer[*len - 4]);
+	printf("%04x", buffer[*len-3]);
+	printf("%04x", buffer[*len -2]);
+	printf("%04x\n\n", buffer[*len -1]);
+
+}
+
+
+
+// MAIN
 int main(int argc , char **argv){
 
     char *hello = "Hellooo from client"; 
@@ -96,10 +132,14 @@ int main(int argc , char **argv){
 		// GET
 
 		else if(!strncmp(cmd_string, "!get", 4)){
-			printf("get\n");
-			printf("len: %d string: %s \n", strlen(&cmd_string[5]), &cmd_string[5]);
+			int len=0;
+			char * nome = strtok(&cmd_string[5], " ");
+			char * nome_locale = strtok(NULL, " ");
+	
+			get_cmd(nome, &len);
+
 			// client invia messaggio
-			sendto(sd, &cmd_string[5], strlen(&cmd_string[5]), MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+			sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
 			printf("Client: Hello message sent :)\n"); 
 		}
 

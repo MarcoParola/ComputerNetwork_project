@@ -40,8 +40,8 @@ int main(int argc , char **argv){
 //-------------------------------------------------------------------------
 
  	int sockfd; 
-    char *hello = "Hellooo from server"; 
     struct sockaddr_in servaddr, cliaddr; 
+	pid_t pid;
       
     // Creating socket file descriptor 
     if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
@@ -66,13 +66,47 @@ int main(int argc , char **argv){
     } 
       
     int len, n; 
-	
-	// server si mette in ascolto
-    n = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
-    buffer[n] = '\0'; 
+	uint16_t opcode, mode;
+	while(1){
+		// server si mette in ascolto
+		printf("Server in ascolto di ricevere una richiesta!\n");
+		len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
 
-    printf("Server : I receive ' %s '\n", buffer); 
-      
+		//buffer[n] = '\0'; 
+
+		//printf("Server : I receive %d\n", len); 
+		printf("%04x", buffer[0]);
+		printf("%04x", buffer[1]);
+		printf("%s\n", buffer+2);
+		//printf("%04x", buffer[len - 4]);
+		/*printf("%04x", buffer[lenn-3]);
+		printf("%04x", buffer[*lenn -2]);
+		printf("%04x\n\n", buffer[*lenn -1]);*/
+
+		memcpy(&opcode, (uint16_t*)&buffer, 2);
+		opcode = ntohs(opcode);
+
+		if(opcode != 1){
+			printf("Ricevuta richista con codice non corrispondente ad una richiesta");
+			// errore 
+
+		}
+
+		pid = fork();
+
+		if(pid > 0){
+
+			// codice del processo figlio che invia un file
+
+			FILE * fp;
+			// open fp
+
+			exit(0);
+		}
+
+		
+     }
+
     return 0; 
 
 //-------------------------------------------------------------------------
