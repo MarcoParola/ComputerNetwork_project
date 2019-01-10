@@ -64,7 +64,8 @@ int main(int argc , char **argv){
         perror("bind failed"); 
         exit(EXIT_FAILURE); 
     } 
-      
+    
+	char file_name[128];
     int len, n; 
 	uint16_t opcode, mode;
 	while(1){
@@ -85,24 +86,42 @@ int main(int argc , char **argv){
 
 		memcpy(&opcode, (uint16_t*)&buffer, 2);
 		opcode = ntohs(opcode);
+		strcpy(file_name, buffer + 2);
 
 		if(opcode != 1){
 			printf("Ricevuta richista con codice non corrispondente ad una richiesta");
-			// errore 
+			// invio errore 
 
 		}
 
 		pid = fork();
 
-		if(pid > 0){
+		/*if(pid > 0){
 
 			// codice del processo figlio che invia un file
 
-			FILE * fp;
-			// open fp
+			FILE * fh = fopen( ,"r");				// TODO metti nome
+			char block[512];
+			
+			if (fh == NULL)
+		        {
+				// invio errore
+				printf("File inesistente\n");
+				return 1;
+		        }
+			
+			while (!feof(fh))
+			{
+				setbuf(fh, block);
+				//sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+				printf("%s", block);
+			}
+
+			    
+			fclose(fh);
 
 			exit(0);
-		}
+		}*/
 
 		
      }
