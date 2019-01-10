@@ -10,7 +10,7 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
   
 #define BUFLEN 1024
-#define PORT     8080 
+#define PORT     8081
 #define BIN 0
 #define TXT 1
 
@@ -132,20 +132,46 @@ int main(int argc , char **argv){
 		// GET
 
 		else if(!strncmp(cmd_string, "!get", 4)){
+			FILE * fh;
 			int len=0;
 			char * nome = strtok(&cmd_string[5], " ");
 			char * nome_locale = strtok(NULL, " ");
-	
+			char nome_locale_estensione[strlen(nome_locale) + 3];
+
+		printf("%s %d\n", nome_locale, strlen(nome_locale));
+		
+		strncpy(nome_locale_estensione, nome_locale, strlen(nome_locale) - 1);
+
+		if(mode == TXT)
+			strcpy((nome_locale_estensione + strlen(nome_locale_estensione)), ".txt");
+		else
+			strcpy((nome_locale_estensione + strlen(nome_locale_estensione)), ".bin");
+
+		printf("%s %d\n", nome_locale_estensione, strlen(nome_locale_estensione));
+
+
+	/*
 			get_cmd(nome, &len);
 
 			// client invia messaggio
+			printf("prima di inviare\n");
 			sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
-			printf("Client: Hello message sent :)\n"); 
+			printf("dopo aver inviato\n"); 
+
 			
-			//len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
+			fh = fopen(file_name ,"w");
+	//--------------------------------------------------------------------------------------------------------------------------------------
+		
+		// TODO cancella	
+			memset(buffer, 0, BUFLEN);
+			len = sizeof(servaddr);
+			printf("prima di ricevere\n");
+			len = recvfrom(sd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &servaddr, &len); 
+			printf("dopo aver ricevuto '%s' lunghezzaaa %d\n\n", buffer, len);*/
 		}
 
-
+//--------------------------------------------------------------------------------------------------------------------------------------
+	
 		// QUIT
 
 		else if(!strncmp(cmd_string, "!quit", 5)){

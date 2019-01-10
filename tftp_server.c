@@ -11,7 +11,7 @@
   
 
 #define BUFLEN 1024
-#define PORT     8080 
+#define PORT     8081
 
 char buffer[BUFLEN];
 
@@ -22,22 +22,6 @@ int main(int argc , char **argv){
         return 0;
     }*/
 
-	/*int ret, sd, len;
-	char buf[BUFLEN];
-	struct sockaddr_in my_addr, cl_addr;
-	int addrlen = sizeof(cl_addr);
-	sd = socket(AF_INET, SOCK_DGRAM, 0);
-	memset(&my_addr, 0, sizeof(my_addr)); // Pulizia
-	my_addr.sin_family = AF_INET ;
-	my_addr.sin_port = htons(4242);
-	my_addr.sin_addr.s_addr = INADDR_ANY;
-	ret = bind(sd, (struct sockaddr*)&my_addr, sizeof(my_addr));
-	while(1){
-		len = recvfrom(sd, buf, BUFLEN, 0,(struct sockaddr*)&cl_addr, &addrlen);
-		printf("%s, %d\n", buf, len);
-	}*/
-
-//-------------------------------------------------------------------------
 
  	int sockfd; 
     struct sockaddr_in servaddr, cliaddr; 
@@ -64,45 +48,52 @@ int main(int argc , char **argv){
         perror("bind failed"); 
         exit(EXIT_FAILURE); 
     } 
+
     
 	char file_name[128];
-    int len, n; 
+    int len, n, addlen; 
 	uint16_t opcode, mode;
+
 	while(1){
 		// server si mette in ascolto
-		printf("Server in ascolto di ricevere una richiesta!\n");
-		len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
-
-		//buffer[n] = '\0'; 
-
-		//printf("Server : I receive %d\n", len); 
-		printf("%04x", buffer[0]);
-		printf("%04x", buffer[1]);
-		printf("%s\n", buffer+2);
-		//printf("%04x", buffer[len - 4]);
-		/*printf("%04x", buffer[lenn-3]);
-		printf("%04x", buffer[*lenn -2]);
-		printf("%04x\n\n", buffer[*lenn -1]);*/
+		printf("\n\n\nServer in ascolto di ricevere una richiesta!\n");
+		addlen = sizeof(cliaddr);
+		len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen); 
 
 		memcpy(&opcode, (uint16_t*)&buffer, 2);
 		opcode = ntohs(opcode);
 		strcpy(file_name, buffer + 2);
 
+		memset(buffer + strlen(file_name), 0, 1);
+		printf("Server: ricevuto codice %d e nome del file %s\n", opcode, file_name);
+		
 		if(opcode != 1){
-			printf("Ricevuta richista con codice non corrispondente ad una richiesta");
-			// invio errore 
+			printf("Ricevuta richista con codice non corrispondente ad una richiesta\n");
+
+			// invio ERRORE
 
 		}
+		
+
 
 		pid = fork();
 
-		/*if(pid > 0){
+		
 
-			// codice del processo figlio che invia un file
+		if(pid == 0){
+			char c;
+			// codice del figlio
+			
+			printf("sto per inviare '%s' di lunghezzaa %d\n", file_name, strlen(file_name));
 
-			FILE * fh = fopen( ,"r");				// TODO metti nome
+			sendto(sockfd, file_name, strlen(file_name), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr)); 
+
+
+			FILE * fh = fopen(file_name ,"r");				// TODO metti nome
 			char block[512];
 			
+			printf("file: %d\n", fh);
+
 			if (fh == NULL)
 		        {
 				// invio errore
@@ -110,18 +101,21 @@ int main(int argc , char **argv){
 				return 1;
 		        }
 			
-			while (!feof(fh))
-			{
-				setbuf(fh, block);
-				//sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
-				printf("%s", block);
+			do{
+				c = fgetc(fh);
+				printf("%c", c);
 			}
+			while (c != EOF);
+			
 
 			    
 			fclose(fh);
 
 			exit(0);
-		}*/
+		}
+		else if(pid > 0){
+			printf("ciao\n");
+		}
 
 		
      }
