@@ -141,6 +141,8 @@ int main(int argc , char **argv){
 			// client invia messaggio
 			sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
 			printf("Client: Hello message sent :)\n"); 
+			
+			//len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &len); 
 		}
 
 
