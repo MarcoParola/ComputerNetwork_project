@@ -12,6 +12,7 @@
 
 #define BUFLEN 1024
 #define PORT     8081
+#define MAX 512
 
 char buffer[BUFLEN];
 
@@ -81,18 +82,20 @@ int main(int argc , char **argv){
 		
 
 		if(pid == 0){
-			char c;
+			
 			// codice del figlio
 			
-			printf("sto per inviare '%s' di lunghezzaa %d\n", file_name, strlen(file_name));
+			//printf("sto per inviare '%s' di lunghezzaa %d\n", file_name, strlen(file_name));
 
-			sendto(sockfd, file_name, strlen(file_name), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr)); 
+			//sendto(sockfd, file_name, strlen(file_name), MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr)); 
 
 
-			FILE * fh = fopen(file_name ,"r");				// TODO metti nome
-			char block[512];
+			FILE * fh = fopen(file_name ,"r");			
+			char block[MAX];
+			char c; 
+			int cont_char = 4;
+			uint16_t cont_block_number = 0;
 			
-			printf("file: %d\n", fh);
 
 			if (fh == NULL)
 		        {
@@ -103,7 +106,20 @@ int main(int argc , char **argv){
 			
 			do{
 				c = fgetc(fh);
+				block[cont_char] = c;
 				printf("%c", c);
+				cont_char++;
+				if(cont_char == MAX + 4 || c == EOF){
+					// PREPARO IL BUFFER E INVIO LA RISPOSTA
+					uint16_t opcode = htons(3), block_number = htons(cont_block_number);
+					memcpy(buffer, &opcode, 2);
+					memcpy(buffer+2, &block_number, 2);
+					//sendto(sockfd, buffer, strlen(buffer), cont_char, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+					//len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen);
+					cont_char = 4;
+					cont_block_number++;
+					memset(buffer, 0, BUFLEN);
+				}
 			}
 			while (c != EOF);
 			
