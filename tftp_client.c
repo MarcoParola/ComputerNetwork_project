@@ -16,7 +16,7 @@
 
 // GLOBAL VARIABLES
 char cmd_string[BUFLEN], buffer[BUFLEN];
-uint16_t mode = BIN;
+uint16_t mode = BIN, opcode;
 
 
 // HELP
@@ -49,9 +49,10 @@ void set_mode(){
 
 
 // GET
-void get_cmd(char * file_name, int* len){
+void prepare_request(char * file_name, int* len){
 
-	uint16_t opcode = htons(1), mod = htons(mode);
+	opcode = htons(1);
+	mod = htons(mode);
 	uint8_t endString = 0;
 	int i=0;
 	char * temp = buffer;
@@ -151,15 +152,43 @@ int main(int argc , char **argv){
 
 
 	/*
-			get_cmd(nome, &len);
+		prepare_request(nome, &len);
 
-			// client invia messaggio
-			printf("prima di inviare\n");
-			sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
-			printf("dopo aver inviato\n"); 
+		
+		// client invia messaggio
+		printf("prima di inviare\n");
+		sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+		printf("dopo aver inviato\n"); 
 
+		memset(buffer, 0, BUFLEN);
+		len = sizeof(servaddr);
+		printf("prima di ricevere\n");
+		len = recvfrom(sd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &servaddr, &len);
+		memcpy(&opcode, (uint16_t*)&buffer, 2);
+		
+		opcode = ntohs(opcode);
+		
+		if(opcpde == 5){
+			printf("ERRORE\n\n");
+		}
+		else if(opcode == 3){
+			// ricevuto file
+			FILE * fh = fopen(file_name ,"w");
+			// scrittura su file fino all'eof o al 512esimo byte
 			
-			fh = fopen(file_name ,"w");
+			// invio ACK
+			memset(buffer, 0, BUFLEN);
+			opcode = htons(4);
+			memcpy(buffer, &opcode, 2);
+			// TODO recupera block number e 
+			
+			//memcpy(buffer + 2, &block_number, 2); 		DECLARE block_number
+			
+			sendto(sd, buffer, 4, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+			fclose(fh);
+		}
+			
+		
 	//--------------------------------------------------------------------------------------------------------------------------------------
 		
 		// TODO cancella	
