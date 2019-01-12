@@ -16,7 +16,7 @@
 
 // GLOBAL VARIABLES
 char cmd_string[BUFLEN], buffer[BUFLEN];
-uint16_t mode = BIN, opcode;
+uint16_t mode = TXT, opcode;
 
 
 // HELP
@@ -52,7 +52,7 @@ void set_mode(){
 void prepare_request(char * file_name, int* len){
 
 	opcode = htons(1);
-	mod = htons(mode);
+	mode = htons(mode);
 	uint8_t endString = 0;
 	int i=0;
 	char * temp = buffer;
@@ -66,19 +66,19 @@ void prepare_request(char * file_name, int* len){
 	memcpy(buffer + * len, &endString, 1);
 	(*len)++;
 
-	memcpy(buffer + * len, &mod, 2);
+	memcpy(buffer + * len, &mode, 2);
 	*len += 2;
 
 	memcpy(buffer + * len, &endString, 1);
 	(*len)++;
 
-	printf("%04x", buffer[0]);
+	/*printf("%04x", buffer[0]);
 	printf("%04x", buffer[1]);
 	printf("%s", buffer+2);
 	printf("%04x", buffer[*len - 4]);
 	printf("%04x", buffer[*len-3]);
 	printf("%04x", buffer[*len -2]);
-	printf("%04x\n\n", buffer[*len -1]);
+	printf("%04x\n\n", buffer[*len -1]);*/
 
 }
 
@@ -89,7 +89,7 @@ int main(int argc , char **argv){
 
     char *hello = "Hellooo from client"; 
     struct sockaddr_in     servaddr; 
-	int ret, sd, len;
+	int ret, sd, len, addrlen;
 	//char buf[BUFLEN];
 	struct sockaddr_in sv_addr; // Struttura per il server
 	// Creating socket file descriptor 
@@ -138,11 +138,10 @@ int main(int argc , char **argv){
 			char * nome = strtok(&cmd_string[5], " ");
 			char * nome_locale = strtok(NULL, " ");
 			char nome_locale_estensione[strlen(nome_locale) + 3];
-
-		printf("%s %d\n", nome_locale, strlen(nome_locale));
 		
-		strncpy(nome_locale_estensione, nome_locale, strlen(nome_locale) - 1);
 
+	// controllo estensione
+		strncpy(nome_locale_estensione, nome_locale, strlen(nome_locale) - 1);
 		if(mode == TXT)
 			strcpy((nome_locale_estensione + strlen(nome_locale_estensione)), ".txt");
 		else
@@ -151,43 +150,54 @@ int main(int argc , char **argv){
 		printf("%s %d\n", nome_locale_estensione, strlen(nome_locale_estensione));
 
 
-	/*
+	
 		prepare_request(nome, &len);
 
 		
-		// client invia messaggio
-		printf("prima di inviare\n");
+		// client invia richiesta
 		sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
-		printf("dopo aver inviato\n"); 
-
-		memset(buffer, 0, BUFLEN);
-		len = sizeof(servaddr);
-		printf("prima di ricevere\n");
-		len = recvfrom(sd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &servaddr, &len);
-		memcpy(&opcode, (uint16_t*)&buffer, 2);
 		
+		// attesa risposta: primo pacchetto del file o 
+		memset(buffer, 0, BUFLEN);
+		addrlen = sizeof(servaddr);
+		len = recvfrom(sd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &servaddr, &addrlen);
+			
+
+		// ricevuto primo pacchetto
+		memcpy(&opcode, (uint16_t*)&buffer, 2);
 		opcode = ntohs(opcode);
 		
-		if(opcpde == 5){
+		if(opcode == 5){
 			printf("ERRORE\n\n");
 		}
 		else if(opcode == 3){
 			// ricevuto file
-			FILE * fh = fopen(file_name ,"w");
+			FILE * fh = fopen(nome_locale_estensione ,"w");
+			uint16_t block_number;
 			// scrittura su file fino all'eof o al 512esimo byte
-			
+			printf("%s\n\n", buffer+4);
 			// invio ACK
-			memset(buffer, 0, BUFLEN);
+			memset(buffer+4, 0, BUFLEN-4);
 			opcode = htons(4);
 			memcpy(buffer, &opcode, 2);
-			// TODO recupera block number e 
-			
-			//memcpy(buffer + 2, &block_number, 2); 		DECLARE block_number
-			
+			printf("invio ack %04x %04x %04x %04x\n\n", buffer[0], buffer[1], buffer[2], buffer[3]);
 			sendto(sd, buffer, 4, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+
+
+			while(len == 516){
+				addrlen = sizeof(servaddr);
+				len = recvfrom(sd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &servaddr, &addrlen);
+				printf("%s\n", buffer+4);
+				memset(buffer+4, 0, BUFLEN-4);
+				opcode = htons(4);
+				memcpy(buffer, &opcode, 2);
+				//printf("invio ack %04x %04x %04x %04x\n\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+				sendto(sd, buffer, 4, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+			}
+
 			fclose(fh);
 		}
-			
+			/*
 		
 	//--------------------------------------------------------------------------------------------------------------------------------------
 		
