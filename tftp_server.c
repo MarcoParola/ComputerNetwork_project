@@ -23,7 +23,7 @@ int main(int argc , char **argv){
         return 0;
     }*/
 
-
+	char block[MAX];
  	int sockfd; 
     struct sockaddr_in servaddr, cliaddr; 
 	pid_t pid;
@@ -57,7 +57,7 @@ int main(int argc , char **argv){
 
 	while(1){
 		// server si mette in ascolto
-		printf("\n\n\nServer in ascolto di ricevere una richiesta!\n");
+		printf("\n\nServer in ascolto di ricevere una richiesta!\n");
 		addlen = sizeof(cliaddr);
 		len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen); 
 
@@ -71,11 +71,17 @@ int main(int argc , char **argv){
 		if(opcode != 1){
 			printf("Ricevuta richista con codice non corrispondente ad una richiesta\n");
 
-			// invio ERRORE
+			memset(block, 0, MAX);
+			uint16_t opcode = htons(5), block_number = htons(2);
+			memcpy(buffer, &opcode, 2);
+			memcpy(buffer+2, &block_number, 2);
+			strcpy(block, "Illegal TFTP operation\n");
+			strcpy(buffer + 4, block);
+			sendto(sockfd, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+			return 1;
 
 		}
 		
-
 
 		pid = fork();
 
@@ -84,8 +90,6 @@ int main(int argc , char **argv){
 		if(pid == 0){
 			
 			FILE * fh = fopen(file_name ,"r");
-			
-			char block[MAX];
 			char c; 
 			int cont_char = 4;
 			uint16_t cont_block_number = 0;
@@ -95,6 +99,13 @@ int main(int argc , char **argv){
 		        {
 				// invio errore
 				printf("File inesistente\n");
+				memset(block, 0, MAX);
+				uint16_t opcode = htons(5), block_number = htons(1);
+				memcpy(buffer, &opcode, 2);
+				memcpy(buffer+2, &block_number, 2);
+				strcpy(block, "File not found\n");
+				strcpy(buffer + 4, block);
+				sendto(sockfd, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 				return 1;
 		        }
 			
@@ -126,7 +137,7 @@ int main(int argc , char **argv){
 			exit(0);
 		}
 		else if(pid > 0){
-			sleep(2);
+			sleep(1);
 		}
 
 		
