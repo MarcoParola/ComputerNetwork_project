@@ -10,7 +10,7 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
   
 #define BUFLEN 1024
-#define PORT     8081
+#define PORT     8082
 #define BIN 0
 #define TXT 1
 
@@ -51,6 +51,8 @@ void set_mode(){
 // GET
 void prepare_request(char * file_name, int* len){
 
+	printf("nome: %s, len: %d\n", file_name, *len);
+	memset(buffer, 0, BUFLEN);
 	opcode = htons(1);
 	mode = htons(mode);
 	uint8_t endString = 0;
@@ -72,13 +74,17 @@ void prepare_request(char * file_name, int* len){
 	memcpy(buffer + * len, &endString, 1);
 	(*len)++;
 
-	/*printf("%04x", buffer[0]);
+	printf("%04x", buffer[0]);
 	printf("%04x", buffer[1]);
 	printf("%s", buffer+2);
 	printf("%04x", buffer[*len - 4]);
 	printf("%04x", buffer[*len-3]);
 	printf("%04x", buffer[*len -2]);
-	printf("%04x\n\n", buffer[*len -1]);*/
+	printf("%04x", buffer[*len -1]);
+	printf("%04x", buffer[*len]);
+	printf("%04x", buffer[*len+1]);
+	printf("%04x", buffer[*len +2]);
+	printf("%04x\n\n", buffer[*len +3]);
 
 }
 
@@ -143,18 +149,11 @@ int main(int argc , char **argv){
 			char nome_locale_estensione[strlen(nome_locale) + 3];
 		
 
-			// controllo estensione
-			strncpy(nome_locale_estensione, nome_locale, strlen(nome_locale) - 1);
-			if(mode == TXT)
-				strcpy((nome_locale_estensione + strlen(nome_locale_estensione)), ".txt");
-			else
-				strcpy((nome_locale_estensione + strlen(nome_locale_estensione)), ".bin");
+			// salvo il nome con cui devo rinominare il file in locale
+			strncpy(nome_locale_estensione, nome_locale, strlen(nome_locale) - 1);		
 
-		
-
-	
 			prepare_request(nome, &len);
-
+			mode = ntohs(mode);
 		
 			// client invia richiesta
 			sendto(sd, buffer, len, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
@@ -187,7 +186,7 @@ int main(int argc , char **argv){
 				memset(buffer+4, 0, BUFLEN-4);
 				opcode = htons(4);
 				memcpy(buffer, &opcode, 2);
-				//printf("invio ack %04x %04x %04x %04x\n\n", buffer[0], buffer[1], buffer[2], buffer[3]);
+				printf("invio ack %04x %04x %04x %04x %04x %04x\n\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 				sendto(sd, buffer, 4, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
 
 
@@ -202,8 +201,9 @@ int main(int argc , char **argv){
 					opcode = htons(4);
 					memcpy(buffer, &opcode, 2);
 					sendto(sd, buffer, 4, MSG_CONFIRM, (const struct sockaddr *) &servaddr, sizeof(servaddr)); 
+					printf("invio ack %04x %04x %04x %04x %04x %04x\n\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 				}
-
+				//memset(buffer, 0, BUFLEN);
 				printf("Download avvenuto con successo!\n");
 				fclose(fh);
 			}
