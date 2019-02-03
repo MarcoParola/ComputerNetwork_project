@@ -11,7 +11,7 @@
   
 
 #define BUFLEN 1024
-#define PORT     8082
+#define PORT     8083
 #define MAX 512
 
 char buffer[BUFLEN];
@@ -40,12 +40,13 @@ int main(int argc , char **argv){
     }*/
 
 	char block[MAX];
- 	int sockfd; 
+ 	int socketToAccept; 
     struct sockaddr_in servaddr, cliaddr; 
 	pid_t pid;
       
     // Creating socket file descriptor 
-    if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+    if ((socketToAccept = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+	{ 
         perror("socket creation failed"); 
         exit(EXIT_FAILURE); 
     } 
@@ -59,8 +60,7 @@ int main(int argc , char **argv){
     servaddr.sin_port = htons(PORT); 
       
     // Bind the socket with the server address 
-    if ( bind(sockfd, (const struct sockaddr *)&servaddr,  
-            sizeof(servaddr)) < 0 ) 
+    if ( bind(socketToAccept, (const struct sockaddr *)&servaddr,  sizeof(servaddr)) < 0 ) 
     { 
         perror("bind failed"); 
         exit(EXIT_FAILURE); 
@@ -76,7 +76,7 @@ int main(int argc , char **argv){
 		// server si mette in ascolto
 		printf("\n\nServer in ascolto di ricevere una richiesta!\n");
 		addlen = sizeof(cliaddr);
-		len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen); 
+		len = recvfrom(socketToAccept, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen); 
 		strcpy(file_name, buffer + 2);
 		memcpy(&opcode, (uint16_t*)&buffer, 2);
 		opcode = ntohs(opcode);
@@ -103,7 +103,7 @@ int main(int argc , char **argv){
 			memcpy(buffer+2, &block_number, 2);
 			strcpy(block, "Illegal TFTP operation\n");
 			strcpy(buffer + 4, block);
-			sendto(sockfd, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+			sendto(socketToAccept, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 			return 1;
 
 		}
@@ -116,11 +116,26 @@ int main(int argc , char **argv){
 		if(pid == 0){
 			
 			char c; 
-			int cont_char = 4;
+			int cont_char = 4, socketToSend;
 			uint16_t cont_block_number = 0;
 			size_t dim = 0;
 			memset(buffer, 0, BUFLEN);
 			printf("mode : %d\n", mode);
+
+			// Creating socket for new request
+			if ((socketToSend = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
+			{ 
+				perror("socket creation failed"); 
+				exit(EXIT_FAILURE); 
+			}
+
+			// Bind the socket with the server address 
+			/*if ( bind(socketToAccept, (const struct sockaddr *)&servaddr,  sizeof(servaddr)) < 0 ) 
+			{ 
+				perror("bind failed"); 
+				exit(EXIT_FAILURE); 
+			} */
+
 			// TXT MODE
 			if(mode == 1){
 				
@@ -136,7 +151,7 @@ int main(int argc , char **argv){
 					memcpy(buffer+2, &block_number, 2);
 					strcpy(block, "File not found\n");
 					strcpy(buffer + 4, block);
-					sendto(sockfd, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+					sendto(socketToSend, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 					return 1;
 					}
 		
@@ -150,10 +165,10 @@ int main(int argc , char **argv){
 						uint16_t opcode = htons(3), block_number = htons(cont_block_number);
 						memcpy(buffer, &opcode, 2);
 						memcpy(buffer+2, &block_number, 2);
-						sendto(sockfd, buffer, cont_char, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+						sendto(socketToSend, buffer, cont_char, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 						printf("dopo invio \n");
 						memset(buffer, 0, BUFLEN);
-						len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen);
+						len = recvfrom(socketToSend, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen);
 						printf("ricevuto ack lunghezza %d\n", len);
 						cont_char = 4;
 						cont_block_number++;
@@ -180,7 +195,7 @@ int main(int argc , char **argv){
 					memcpy(buffer+2, &block_number, 2);
 					strcpy(block, "File not found\n");
 					strcpy(buffer + 4, block);
-					sendto(sockfd, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+					sendto(socketToSend, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 					return 1;
 					}
 
@@ -197,10 +212,10 @@ int main(int argc , char **argv){
 						uint16_t opcode = htons(3), block_number = htons(cont_block_number);
 						memcpy(buffer, &opcode, 2);
 						memcpy(buffer+2, &block_number, 2);
-						sendto(sockfd, buffer, cont_char, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
+						sendto(socketToSend, buffer, cont_char, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 						printf("dopo invio \n");
 						memset(buffer, 0, BUFLEN);
-						len = recvfrom(sockfd, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen);
+						len = recvfrom(socketToSend, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen);
 						printf("ricevuto ack lunghezza %d\n", len);
 						//printf("invio ack %04x %04x %04x %04x %04x %04x\n\n", buffer[0], buffer[1], buffer[2], buffer[3], buffer[4], buffer[5]);
 						cont_char = 4;
@@ -218,7 +233,6 @@ int main(int argc , char **argv){
 			exit(0);
 		}
 		else if(pid > 0){
-			sleep(1);
 			memset(buffer, 0, BUFLEN);
 		}
 

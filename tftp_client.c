@@ -10,7 +10,7 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
   
 #define BUFLEN 1024
-#define PORT     8082
+#define PORT     8083
 #define BIN 0
 #define TXT 1
 
