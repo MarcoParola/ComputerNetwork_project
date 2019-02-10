@@ -11,7 +11,6 @@
   
 
 #define BUFLEN 1024
-#define PORT     8083
 #define MAX 512
 
 char buffer[BUFLEN];
@@ -20,29 +19,35 @@ char buffer[BUFLEN];
 	TODO 
 	implementa funzione che invia pacchetto di errore ricevendo come parametro il tipo di errore
 
-	void send_error(){
-		
+	void send_error(int& socket, char*buffer, sockaddr_in & cli_addr, int errorCode, char * message){
+
+		opcode = htons(5); 
+		uint16_t code = htons(errorCode);
+		memcpy(buffer, &opcode, 2);
+		memcpy(buffer+2, &block_number, 2);
+		strcpy(buffer + 4, message);
+		sendto(socket, buffer, strlen(block)+4, MSG_CONFIRM, (const struct sockaddr *) &cli_addr, sizeof(cliaddr));
 	}
 
 */
 
 int main(int argc , char **argv){
-    /*
-		TODO implementa i controlli sui parametri e l'assegnazione alle variabili di tali valori 
+    
+		//TODO implementa i controlli sui parametri e l'assegnazione alle variabili di tali valori 
 
-		if(argc != 2){
-        printf("Argomenti non corretti, riprovare con:\n");
-        printf("IP_UDP, PORTA_UDP, IP_SERVER, PORTA_SERVER\n correggi");
-        return 0;
+	if(argc != 3){
+		printf("Argomenti non corretti, riprovare con:\n");
+		printf("Porta del Server e Directory del file\n");
+    	return 0;
+    }
 
-	inserisci variabili globali per la porta e assegna i valori passati come argomento al main
-
-    }*/
 
 	char block[MAX];
- 	int socketToAccept; 
+ 	int socketToAccept, port = atoi(argv[1]); 
     struct sockaddr_in servaddr, cliaddr; 
 	pid_t pid;
+
+	printf("port: %d\n", port);
       
     // Creating socket file descriptor 
     if ((socketToAccept = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
@@ -57,7 +62,7 @@ int main(int argc , char **argv){
     // Filling server information 
     servaddr.sin_family    = AF_INET; // IPv4 
     servaddr.sin_addr.s_addr = INADDR_ANY; 
-    servaddr.sin_port = htons(PORT); 
+    servaddr.sin_port = htons(port); 
       
     // Bind the socket with the server address 
     if ( bind(socketToAccept, (const struct sockaddr *)&servaddr,  sizeof(servaddr)) < 0 ) 
@@ -74,7 +79,7 @@ int main(int argc , char **argv){
 
 	while(1){
 		// server si mette in ascolto
-		printf("\n\nServer in ascolto di ricevere una richiesta!\n");
+		printf("\n\nServer in ascolto di ricevere una richiesta!\n");printf("cia0\n");
 		addlen = sizeof(cliaddr);
 		len = recvfrom(socketToAccept, (char *)buffer, BUFLEN, MSG_WAITALL, ( struct sockaddr *) &cliaddr, &addlen); 
 		strcpy(file_name, buffer + 2);
@@ -165,6 +170,7 @@ int main(int argc , char **argv){
 						uint16_t opcode = htons(3), block_number = htons(cont_block_number);
 						memcpy(buffer, &opcode, 2);
 						memcpy(buffer+2, &block_number, 2);
+						printf("cia1\n");
 						sendto(socketToSend, buffer, cont_char, MSG_CONFIRM, (const struct sockaddr *) &cliaddr, sizeof(cliaddr));
 						printf("dopo invio \n");
 						memset(buffer, 0, BUFLEN);
@@ -172,11 +178,12 @@ int main(int argc , char **argv){
 						printf("ricevuto ack lunghezza %d\n", len);
 						cont_char = 4;
 						cont_block_number++;
+						printf("cia0\n");
 					}
 					//memset(buffer, 0, BUFLEN);
 				}
 				while (c != EOF);
-			
+				printf("cia0ooooooooooooooooooooooooooooooooooo1\n");
 				memset(buffer, 0, BUFLEN);
 				fclose(fh);
 			}
@@ -225,15 +232,16 @@ int main(int argc , char **argv){
 
 				}
 				while (dim ==  1);
-
 				memset(buffer, 0, BUFLEN);
 				fclose(fh);
 			}
-
+			close(socketToSend); 
 			exit(0);
+			printf("cia0ooooooooooooooooooooooooooooooooooo2\n");
 		}
 		else if(pid > 0){
 			memset(buffer, 0, BUFLEN);
+			printf("cia0ooooooooooooooooooooooooooooooooooo3\n");
 		}
 
 		

@@ -10,7 +10,6 @@
 #include <sys/time.h> //FD_SET, FD_ISSET, FD_ZERO macros
   
 #define BUFLEN 1024
-#define PORT     8083
 #define BIN 0
 #define TXT 1
 
@@ -94,35 +93,40 @@ void prepare_request(char * file_name, int* len){
 int main(int argc , char **argv){
 
 	
-    /*if(argc != 2){
-        printf("Argomenti non corretti, riprovare con:\n");
-        printf("IP_UDP, PORTA_UDP, IP_SERVER, PORTA_SERVER\n correggi");
-        return 0;
-    }*/
+    if(argc != 3){
+		printf("Argomenti non corretti, riprovare con:\n");
+		printf("IP e Porta del Server\n");
+    	return 0;
+    }
 
     struct sockaddr_in     servaddr; 
-	int ret, sd, len, addrlen, i;
-	struct sockaddr_in sv_addr; // Struttura per il server
-
-	// Creating socket file descriptor 
-    if ( (sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
-        perror("socket creation failed"); 
-        exit(EXIT_FAILURE); 
-    } 
-  
-    memset(&servaddr, 0, sizeof(servaddr)); 
-      
-    // Filling server information 
-    servaddr.sin_family = AF_INET; 
-    servaddr.sin_port = htons(PORT); 
-    servaddr.sin_addr.s_addr = INADDR_ANY; 
-
+	int ret, len, addrlen, i, port = atoi(argv[2]);
+	//struct sockaddr_in sv_addr; // Struttura per il server
+	char serverIP[32];
+	strcpy(serverIP, argv[1]);
 
 
 	help_cmd();
 		
 
 	while(1){
+
+		int sd;
+		
+		memset(&servaddr, 0, sizeof(servaddr)); 
+      
+		// Filling server information 
+		servaddr.sin_family = AF_INET; 
+		servaddr.sin_port = htons(port); 
+		inet_pton(AF_INET, serverIP, &servaddr.sin_addr);
+
+		// Creating socket file descriptor 
+		if ( (sd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) { 
+		    perror("socket creation failed"); 
+		    exit(EXIT_FAILURE); 
+		}
+		
+
 		printf("\n");
 		memset(cmd_string, 0, BUFLEN);
 		fgets(cmd_string, BUFLEN, stdin);
@@ -206,6 +210,7 @@ int main(int argc , char **argv){
 				//memset(buffer, 0, BUFLEN);
 				printf("Download avvenuto con successo!\n");
 				fclose(fh);
+				close(sd);
 			}
 		}
 
